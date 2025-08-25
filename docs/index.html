@@ -1,15 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具导航页</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tool-card {
+            background: linear-gradient(135deg, #f8fafc, #edf2f7);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #2d3748;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+        }
+
+        .tool-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .tool-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .tool-description {
+            font-size: 0.9em;
+            color: #718096;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Available Pages</h1>
-    <ul>
-        <li><a href="base64-tool.html">Base64 Tool</a></li>
-        <li><a href="calendar.html">Calendar</a></li>
-        <li><a href="json-formatter.html">JSON Formatter</a></li>
-    </ul>
+    <div class="container">
+        <h1>🛠️ 工具导航</h1>
+
+        <div class="tool-grid">
+            <a href="base64-tool.html" class="tool-card">
+                <div class="tool-icon">🔐</div>
+                <h2 class="tool-title">Base64 加密解密工具</h2>
+                <p class="tool-description">支持文本的 Base64 编码和解码，包含中文和特殊字符处理</p>
+            </a>
+
+            <a href="calendar.html" class="tool-card">
+                <div class="tool-icon">📅</div>
+                <h2 class="tool-title">黄历查询工具</h2>
+                <p class="tool-description">农历查询、节气提醒、黄历信息查看，支持详细的吉凶宜忌</p>
+            </a>
+
+            <a href="json-formatter.html" class="tool-card">
+                <div class="tool-icon">🔧</div>
+                <h2 class="tool-title">JSON 格式化工具</h2>
+                <p class="tool-description">JSON 数据的格式化、压缩、验证，支持复杂嵌套结构</p>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>实用工具集合 - 让开发更高效</p>
+        </div>
+    </div>
 </body>
 </html>
