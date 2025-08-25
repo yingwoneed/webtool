@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 加密解密工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .tool-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .base64-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .swap-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .swap-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .swap-btn:hover {
+            background: #5a67d8;
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .swap-btn:active {
+            transform: scale(0.95);
+        }
+
+        .tool-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        textarea {
+            width: 90%;
+            height: 150px;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .encode-btn {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .encode-btn:hover {
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        .decode-btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .decode-btn:hover {
+            background: linear-gradient(135deg, #3182ce, #2c5282);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            color: white;
+            box-shadow: 0 4px 15px rgba(237, 137, 54, 0.3);
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #dd6b20, #c05621);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 16px;
+            background: #e6fffa;
+            border-radius: 10px;
+            border-left: 4px solid #38b2ac;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            font-size: 14px;
+            line-height: 1.5;
+            transition: all 0.3s;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            border-left-color: #e53e3e;
+            color: #c53030;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.1);
+        }
+
+        .success {
+            background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+            border-left-color: #38a169;
+            color: #22543d;
+            box-shadow: 0 4px 15px rgba(56, 161, 105, 0.1);
+        }
+
+        .info {
+            background: linear-gradient(135deg, #bee3f8, #90cdf4);
+            border-left-color: #3182ce;
+            color: #2a4365;
+            box-shadow: 0 4px 15px rgba(49, 130, 206, 0.1);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .base64-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .swap-container {
+                order: -1;
+                padding: 5px;
+            }
+
+            .swap-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .button-group button {
+                margin: 5px 0;
+            }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Base64 加密解密工具</h1>
+
+        <div class="base64-container">
+            <div class="tool-section">
+                <h2>📝 文本输入</h2>
+                <textarea id="inputText" placeholder="请输入要加密或解密的文本..."></textarea>
+                <div class="stats">
+                    <span>输入长度: <span id="inputLength">0</span> 字符</span>
+                    <span>编码后长度: <span id="encodedLength">0</span> 字符</span>
+                </div>
+            </div>
+
+            <div class="swap-container">
+                <button class="swap-btn" onclick="swapContent()" title="交换输入和输出">⇄</button>
+            </div>
+
+            <div class="tool-section">
+                <h2>📤 结果输出</h2>
+                <div id="resultArea" class="result info">等待操作...</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="encode-btn" onclick="encodeText()">🔒 加密 (Encode)</button>
+            <button class="decode-btn" onclick="decodeText()">🔓 解密 (Decode)</button>
+            <button class="clear-btn" onclick="clearAll()">🗑️ 清空</button>
+            <button class="copy-btn" onclick="copyResult()">📋 复制结果</button>
+        </div>
+
+        <div class="footer">
+            <p>Base64 编码解码工具 - 支持中文和特殊字符</p>
+        </div>
+    </div>
+
+    <script>
+        // 更新输入长度统计
+        document.getElementById('inputText').addEventListener('input', updateInputStats);
+
+        function updateEncodedLength(inputLength) {
+            // Base64编码后长度约为原长的4/3
+            const encodedLength = Math.ceil(inputLength * 4 / 3);
+            document.getElementById('encodedLength').textContent = encodedLength;
+        }
+
+        // Base64 编码
+        function encodeText() {
+            const input = document.getElementById('inputText').value;
+            const resultArea = document.getElementById('resultArea');
+
+            if (!input.trim()) {
+                showResult('请输入要加密的文本', 'error');
+                return;
+            }
+
+            try {
+                // 使用 btoa 进行 Base64 编码
+                const encoded = btoa(unescape(encodeURIComponent(input)));
+                showResult(encoded, 'success');
+            } catch (error) {
+                showResult('编码失败: ' + error.message, 'error');
+            }
+        }
+
+        // Base64 解码
+        function decodeText() {
+            const input = document.getElementById('inputText').value;
+            const resultArea = document.getElementById('resultArea');
+
+            if (!input.trim()) {
+                showResult('请输入要解密的 Base64 文本', 'error');
+                return;
+            }
+
+            try {
+                // 使用 atob 进行 Base64 解码
+                const decoded = decodeURIComponent(escape(atob(input)));
+                showResult(decoded, 'success');
+            } catch (error) {
+                showResult('解码失败: 请确保输入的是有效的 Base64 字符串', 'error');
+            }
+        }
+
+        // 清空所有内容
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('inputLength').textContent = '0';
+            document.getElementById('encodedLength').textContent = '0';
+            showResult('等待操作...', 'info');
+        }
+
+        // 复制结果
+        function copyResult() {
+            const resultArea = document.getElementById('resultArea');
+            const textToCopy = resultArea.textContent;
+
+            if (textToCopy === '等待操作...') {
+                showResult('没有可复制的内容', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                const originalText = resultArea.textContent;
+                showResult('✅ 复制成功!', 'success');
+                setTimeout(() => {
+                    resultArea.textContent = originalText;
+                    resultArea.className = 'result success';
+                }, 2000);
+            }).catch(function(err) {
+                showResult('复制失败: ' + err.message, 'error');
+            });
+        }
+
+        // 显示结果
+        function showResult(message, type) {
+            const resultArea = document.getElementById('resultArea');
+            resultArea.textContent = message;
+            resultArea.className = `result ${type}`;
+        }
+
+        // 交换输入和输出内容
+        function swapContent() {
+            const input = document.getElementById('inputText');
+            const output = document.getElementById('resultArea');
+
+            const temp = input.value;
+            input.value = output.textContent;
+            output.textContent = temp;
+
+            // 更新输入长度统计
+            updateInputStats();
+            showResult('🔄 已交换输入和输出内容', 'success');
+        }
+
+        // 更新输入统计信息
+        function updateInputStats() {
+            const input = document.getElementById('inputText');
+            const length = input.value.length;
+            document.getElementById('inputLength').textContent = length;
+            updateEncodedLength(length);
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+            updateEncodedLength(0);
+        };
+    </script>
+</body>
+</html>
