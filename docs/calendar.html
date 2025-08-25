@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄历查询 - 月历视图</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; text-align: center; margin: 0; padding: 20px; background: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; gap: 30px; }
+        .calendar-container { flex: 1; }
+        .today-panel { width: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 16px; min-height: 400px; }
+        .today-panel h3 { margin: 0 0 15px 0; font-size: 16px; text-align: center; }
+        .today-detail { margin: 6px 0; padding: 6px; background: rgba(255,255,255,0.15); border-radius: 6px; font-size: 11px; line-height: 1.4; }
+        .month { margin: 0; padding: 25px; border-radius: 15px; background: #ffffff; border: 1px solid #e1e8ed; }
+        .month h3 { margin: 0 0 25px 0; color: #2c3e50; font-size: 24px; text-align: center; font-weight: 600; }
+        .navigation { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .nav-btn { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease; }
+        .nav-btn:hover { background: #0056b3; transform: translateY(-1px); }
+        .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day { padding: 8px; text-align: center; border-radius: 8px; min-height: 50px; display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; cursor: pointer; position: relative; transition: all 0.2s ease; background: #ffffff; border: 1px solid #dee2e6; }
+        .day:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .header { background: #f8f9fa; font-weight: 600; color: #495057; }
+        .today { background: #fff3cd; border: 2px solid #ffc107; font-weight: 700; font-size: 16px; }
+        .festival { background: #d4edda; color: #155724; }
+        .solar-term { background: #d1ecf1; color: #0c5460; }
+        .lunar-date { font-size: 10px; color: #6c757d; margin-top: 1px; font-weight: 500; }
+        .day-number { font-weight: 700; font-size: 16px; color: #212529; }
+        .festival-text { font-size: 9px; margin-top: 1px; font-weight: 600; }
+        .almanac-info { font-size: 8px; color: #adb5bd; margin-top: 1px; font-weight: 500; }
+        .detail-popup { display: none; position: fixed; background: #ffffff; border: 1px solid #dee2e6; border-radius: 12px; padding: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 9999; min-width: 250px; font-size: 11px; text-align: left; }
+        .detail-popup::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #ffffff;
+        }
+
+        .detail-popup.arrow-down::before {
+            top: auto;
+            bottom: -8px;
+            border-top: 8px solid #ffffff;
+            border-bottom: none;
+        }
+        .detail-title { font-weight: 700; margin-bottom: 10px; color: #212529; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; font-size: 12px; text-align: center; }
+        .detail-item { margin: 5px 0; line-height: 1.3; padding: 2px 0; }
+        .detail-item strong { color: #495057; min-width: 50px; display: inline-block; font-weight: 600; }
+        .auspicious { color: #ffffff; font-weight: 700; background: linear-gradient(45deg, #28a745, #20c997); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 4px; }
+        .inauspicious { color: #ffffff; font-weight: 700; background: linear-gradient(45deg, #dc3545, #fd7e14); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 4px; }
+        @media (max-width: 768px) {
+            .container { flex-direction: column; padding: 20px; gap: 20px; }
+            .today-panel { width: 100%; padding: 20px; min-height: 350px; }
+            .today-detail { font-size: 10px; padding: 5px; }
+            .day { min-height: 45px; font-size: 10px; padding: 6px; }
+            .day-number { font-size: 14px; }
+            .lunar-date { font-size: 9px; }
+            .festival-text { font-size: 8px; }
+            .almanac-info { font-size: 7px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calendar-container">
+            <h1 style="font-size: 28px; margin-bottom: 20px; color: #2c3e50; font-weight: 700;">🌙 黄历查询 - 月历视图</h1>
+            <div style="margin: 15px 0; font-size: 12px; color: #6c757d; background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                <div style="margin-bottom: 10px; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 12px; height: 12px; background: #d4edda; border-radius: 3px;"></div>
+                        <span>节日</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 12px; height: 12px; background: #d1ecf1; border-radius: 3px;"></div>
+                        <span>节气</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 12px; height: 12px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 3px;"></div>
+                        <span>今日</span>
+                    </div>
+                </div>
+                <div style="text-align: center; font-weight: 500;">💡 点击任意日期可查看详细的黄历信息</div>
+            </div>
+
+            <div class="navigation">
+                <button id="prev-month" class="nav-btn">⬅️ 上月</button>
+                <h2 id="current-month-year" style="margin: 0; color: #2c3e50; font-size: 22px; font-weight: 700;"></h2>
+                <button id="next-month" class="nav-btn">下月 ➡️</button>
+            </div>
+
+            <div id="calendar" class="month">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+
+        <div class="today-panel">
+            <h3>🌟 今日黄历</h3>
+            <div id="today-details">
+                <!-- Today's almanac info will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+        const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+        const lunarMonths = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月'];
+
+        // Chinese festivals and holidays data
+        const festivals = {
+            '1-1': '元旦',
+            '2-14': '情人节',
+            '3-8': '妇女节',
+            '4-5': '清明节',
+            '5-1': '劳动节',
+            '5-4': '青年节',
+            '6-1': '儿童节',
+            '7-1': '建党节',
+            '8-1': '建军节',
+            '9-10': '教师节',
+            '10-1': '国庆节',
+            '12-25': '圣诞节'
+        };
+
+        // Chinese traditional festivals (lunar dates)
+        const lunarFestivals = {
+            '1-1': '春节',
+            '1-15': '元宵节',
+            '5-5': '端午节',
+            '8-15': '中秋节',
+            '9-9': '重阳节'
+        };
+
+        // Solar terms (节气) - approximate dates
+        const solarTerms = {
+            '1': '小寒', '2': '大寒', '3': '立春', '4': '雨水',
+            '5': '惊蛰', '6': '春分', '7': '清明', '8': '谷雨',
+            '9': '立夏', '10': '小满', '11': '芒种', '12': '夏至',
+            '13': '小暑', '14': '大暑', '15': '立秋', '16': '处暑',
+            '17': '白露', '18': '秋分', '19': '寒露', '20': '霜降',
+            '21': '立冬', '22': '小雪', '23': '大雪', '24': '冬至'
+        };
+
+        // Chinese zodiac (生肖)
+        const zodiacSigns = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+
+        // Western zodiac (星座)
+        const westernZodiac = [
+            { name: '摩羯座', start: [12, 22], end: [1, 19] },
+            { name: '水瓶座', start: [1, 20], end: [2, 18] },
+            { name: '双鱼座', start: [2, 19], end: [3, 20] },
+            { name: '白羊座', start: [3, 21], end: [4, 19] },
+            { name: '金牛座', start: [4, 20], end: [5, 20] },
+            { name: '双子座', start: [5, 21], end: [6, 21] },
+            { name: '巨蟹座', start: [6, 22], end: [7, 22] },
+            { name: '狮子座', start: [7, 23], end: [8, 22] },
+            { name: '处女座', start: [8, 23], end: [9, 22] },
+            { name: '天秤座', start: [9, 23], end: [10, 23] },
+            { name: '天蝎座', start: [10, 24], end: [11, 22] },
+            { name: '射手座', start: [11, 23], end: [12, 21] }
+        ];
+
+        // Six Harmonies (六曜)
+        const sixHarmonies = ['先胜', '友引', '先负', '佛灭', '大安', '赤口'];
+
+        // Twelve Deities (十二神)
+        const twelveDeities = ['建', '除', '满', '平', '定', '执', '破', '危', '成', '收', '开', '闭'];
+
+        // Simplified lunar date calculation
+        function getLunarDate(year, month, day) {
+            const baseDate = new Date(1900, 0, 31);
+            const currentDate = new Date(year, month, day);
+            const daysDiff = Math.floor((currentDate - baseDate) / (1000 * 60 * 60 * 24));
+
+            const lunarDay = (daysDiff % 30) + 1;
+            const lunarMonth = ((daysDiff % 354) / 30) + 1;
+
+            return {
+                month: Math.floor(lunarMonth),
+                day: lunarDay,
+                monthName: lunarMonths[Math.floor(lunarMonth) - 1] || '未知',
+                dayName: lunarDay === 1 ? '初一' : (lunarDay <= 10 ? `初${lunarDay}` : lunarDay <= 20 ? `十${lunarDay - 10}` : lunarDay <= 30 ? `廿${lunarDay - 20}` : '三十')
+            };
+        }
+
+        function getWesternZodiac(month, day) {
+            for (let zodiac of westernZodiac) {
+                const start = zodiac.start;
+                const end = zodiac.end;
+
+                if ((month === start[0] && day >= start[1]) || (month === end[0] && day <= end[1])) {
+                    return zodiac.name;
+                }
+            }
+            return westernZodiac[0].name;
+        }
+
+        function getZodiacSign(year) {
+            return zodiacSigns[(year - 4) % 12];
+        }
+
+        function getSixHarmony(day) {
+            return sixHarmonies[day % 6];
+        }
+
+        function getTwelveDeity(day) {
+            return twelveDeities[day % 12];
+        }
+
+        function getSixHarmonyDescription(harmony) {
+            const descriptions = {
+                '先胜': '宜先发制人，主动出击',
+                '友引': '忌远行，宜会友',
+                '先负': '不宜急躁，宜守不宜攻',
+                '佛灭': '诸事不宜，宜静养',
+                '大安': '万事大吉，宜行大事',
+                '赤口': '口舌是非，宜修身养性'
+            };
+            return descriptions[harmony] || '';
+        }
+
+        function getTwelveDeityDescription(deity) {
+            const descriptions = {
+                '建': '宜出行、动土、修造',
+                '除': '宜清除、扫除、祭祀',
+                '满': '宜宴请、婚嫁、交易',
+                '平': '宜修整、求医、交易',
+                '定': '宜祭祀、祈福、订婚',
+                '执': '宜捕捉、捕捉、捕捉',
+                '破': '宜破土、破屋、破财',
+                '危': '宜高危、冒险、探险',
+                '成': '宜成就、成功、完工',
+                '收': '宜收获、收藏、聚财',
+                '开': '宜开启、新始、开张',
+                '闭': '宜关闭、结束、休息'
+            };
+            return descriptions[deity] || '';
+        }
+
+        function showAlmanacDetail(year, month, day, event) {
+            // Hide any existing popups
+            document.querySelectorAll('.detail-popup').forEach(popup => popup.style.display = 'none');
+
+            const lunarDate = getLunarDate(year, month, day);
+            const zodiac = getZodiacSign(year);
+            const westernZodiacSign = getWesternZodiac(month + 1, day);
+            const sixHarmony = getSixHarmony(day);
+            const twelveDeity = getTwelveDeity(day);
+
+            // Create popup element
+            const popup = document.createElement('div');
+            popup.className = 'detail-popup';
+            popup.innerHTML = `
+                <div class="detail-title">📖 ${year}年${month + 1}月${day}日 详细黄历</div>
+                <div class="detail-item">📅 <strong>公历：</strong>${year}年${month + 1}月${day}日</div>
+                <div class="detail-item">🌙 <strong>农历：</strong>${lunarDate.monthName}${lunarDate.dayName}</div>
+                <div class="detail-item">🐉 <strong>生肖：</strong>${zodiac}年</div>
+                <div class="detail-item">⭐ <strong>星座：</strong>${westernZodiacSign}</div>
+                <div class="detail-item">🔮 <strong>六曜：</strong>${sixHarmony} - ${getSixHarmonyDescription(sixHarmony)}</div>
+                <div class="detail-item">⚡ <strong>十二神：</strong>${twelveDeity} - ${getTwelveDeityDescription(twelveDeity)}</div>
+                <div class="detail-item"><strong>宜：</strong><span class="auspicious">祭祀、祈福、出行、动土</span></div>
+                <div class="detail-item"><strong>忌：</strong><span class="inauspicious">诉讼、争斗、嫁娶</span></div>
+                <div class="detail-item"><strong>时辰吉凶：</strong>子时吉、丑时平、寅时凶</div>
+                <div class="detail-item"><strong>五行：</strong>金旺 土相</div>
+                <div class="detail-item"><strong>彭祖百忌：</strong>忌栽种、修屋</div>
+            `;
+
+            // Add popup to body and make it visible to get accurate dimensions
+            document.body.appendChild(popup);
+            popup.style.display = 'block';
+
+            // Calculate optimal position
+            const dayRect = event.currentTarget.getBoundingClientRect();
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Determine if popup should show above or below the clicked date
+            // Use a lower threshold to prefer showing popup below more often
+            const dayCenterY = dayRect.top + (dayRect.height / 2);
+            const viewportCenterY = viewportHeight * 0.4; // Lower threshold to prefer bottom
+            const showAbove = dayCenterY > viewportCenterY;
+
+            let left = dayRect.left + (dayRect.width / 2) - (popupRect.width / 2);
+            let top;
+
+            if (showAbove) {
+                // Show popup above the date
+                top = dayRect.top - popupRect.height - 10;
+                // Adjust arrow to point down
+                popup.classList.add('arrow-down');
+            } else {
+                // Show popup below the date
+                top = dayRect.bottom + 10;
+                // Adjust arrow to point up
+                popup.classList.remove('arrow-down');
+            }
+
+            // Adjust horizontal position if popup goes off screen
+            if (left < 10) {
+                left = 10;
+            } else if (left + popupRect.width > viewportWidth - 10) {
+                left = viewportWidth - popupRect.width - 10;
+            }
+
+            // Adjust vertical position if popup goes off screen
+            if (showAbove) {
+                if (top < 10) {
+                    top = dayRect.bottom + 10;
+                    popup.classList.remove('arrow-down');
+                }
+            } else {
+                if (top + popupRect.height > viewportHeight - 10) {
+                    top = dayRect.top - popupRect.height - 10;
+                    popup.classList.add('arrow-down');
+                }
+            }
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+
+            // Hide popup when clicking elsewhere
+            const clickedDay = event.currentTarget;
+            document.addEventListener('click', function hidePopup(e) {
+                if (!popup.contains(e.target) && !clickedDay.contains(e.target)) {
+                    popup.style.display = 'none';
+                    document.body.removeChild(popup);
+                    document.removeEventListener('click', hidePopup);
+                }
+            });
+        }
+
+        let currentDate = new Date();
+
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            // Update month/year display
+            document.getElementById('current-month-year').textContent = `${year}年 ${monthNames[month]}`;
+
+            // Create days grid
+            const daysDiv = document.createElement('div');
+            daysDiv.className = 'days';
+
+            // Add day headers
+            dayNames.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'day header';
+                header.textContent = day;
+                daysDiv.appendChild(header);
+            });
+
+            // Calculate first day of the month
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Add days from previous month
+            const prevMonth = month === 0 ? 11 : month - 1;
+            const prevYear = month === 0 ? year - 1 : year;
+            const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const prevDay = daysInPrevMonth - firstDay + i + 1;
+                const day = document.createElement('div');
+                day.className = 'day prev-month';
+
+                // Get lunar date for previous month
+                const lunarDate = getLunarDate(prevYear, prevMonth, prevDay);
+
+                // Check for festivals and solar terms
+                const dateKey = `${prevMonth + 1}-${prevDay}`;
+                const festival = festivals[dateKey];
+                const lunarFestival = lunarFestivals[`${lunarDate.month}-${lunarDate.day}`];
+                const solarTerm = getSolarTerm(prevYear, prevMonth + 1, prevDay);
+
+                // Get almanac info
+                const sixHarmony = getSixHarmony(prevDay);
+                const twelveDeity = getTwelveDeity(prevDay);
+
+                // Create day content
+                let dayContent = `<div class="day-number">${prevDay}</div>`;
+                dayContent += `<div class="lunar-date">${lunarDate.dayName}</div>`;
+
+                // Add festival or solar term info
+                if (festival) {
+                    dayContent += `<div class="festival-text">${festival}</div>`;
+                    day.classList.add('festival');
+                } else if (lunarFestival) {
+                    dayContent += `<div class="festival-text">${lunarFestival}</div>`;
+                    day.classList.add('festival');
+                } else if (solarTerm) {
+                    dayContent += `<div class="festival-text">${solarTerm}</div>`;
+                    day.classList.add('solar-term');
+                } else {
+                    // Show almanac info for regular days
+                    dayContent += `<div class="almanac-info">${sixHarmony} ${twelveDeity}</div>`;
+                }
+
+                day.innerHTML = dayContent;
+                day.style.opacity = '0.5';
+                day.style.backgroundColor = '#f8f9fa';
+                day.style.color = '#6c757d';
+
+                // Add click event for detailed almanac info
+                day.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    showAlmanacDetail(prevYear, prevMonth, prevDay, event);
+                });
+
+                daysDiv.appendChild(day);
+            }
+
+            // Add days of the month
+            for (let d = 1; d <= daysInMonth; d++) {
+                const day = document.createElement('div');
+                day.className = 'day';
+
+                // Get lunar date
+                const lunarDate = getLunarDate(year, month, d);
+
+                // Check for festivals and solar terms
+                const dateKey = `${month + 1}-${d}`;
+                const festival = festivals[dateKey];
+                const lunarFestival = lunarFestivals[`${lunarDate.month}-${lunarDate.day}`];
+                const solarTerm = getSolarTerm(year, month + 1, d);
+
+                // Get almanac info
+                const sixHarmony = getSixHarmony(d);
+                const twelveDeity = getTwelveDeity(d);
+
+                // Create day content
+                let dayContent = `<div class="day-number">${d}</div>`;
+                dayContent += `<div class="lunar-date">${lunarDate.dayName}</div>`;
+
+                // Add festival or solar term info
+                if (festival) {
+                    dayContent += `<div class="festival-text">${festival}</div>`;
+                    day.classList.add('festival');
+                } else if (lunarFestival) {
+                    dayContent += `<div class="festival-text">${lunarFestival}</div>`;
+                    day.classList.add('festival');
+                } else if (solarTerm) {
+                    dayContent += `<div class="festival-text">${solarTerm}</div>`;
+                    day.classList.add('solar-term');
+                } else {
+                    // Show almanac info for regular days
+                    dayContent += `<div class="almanac-info">${sixHarmony} ${twelveDeity}</div>`;
+                }
+
+                day.innerHTML = dayContent;
+
+                // Highlight today
+                const today = new Date();
+                if (year === today.getFullYear() && month === today.getMonth() && d === today.getDate()) {
+                    day.classList.add('today');
+                }
+
+                // Add click event for detailed almanac info
+                day.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    showAlmanacDetail(year, month, d, event);
+                });
+
+                daysDiv.appendChild(day);
+            }
+
+            // Add days from next month to fill the grid
+            const totalCells = 42; // 6 rows * 7 days
+            const currentCells = firstDay + daysInMonth;
+            const remainingCells = totalCells - currentCells;
+
+            // Calculate next month and year
+            const nextMonth = month === 11 ? 0 : month + 1;
+            const nextYear = month === 11 ? year + 1 : year;
+
+            for (let i = 1; i <= remainingCells; i++) {
+                const day = document.createElement('div');
+                day.className = 'day next-month';
+
+                // Get lunar date for next month
+                const lunarDate = getLunarDate(nextYear, nextMonth, i);
+
+                // Check for festivals and solar terms
+                const dateKey = `${nextMonth + 1}-${i}`;
+                const festival = festivals[dateKey];
+                const lunarFestival = lunarFestivals[`${lunarDate.month}-${lunarDate.day}`];
+                const solarTerm = getSolarTerm(nextYear, nextMonth + 1, i);
+
+                // Get almanac info
+                const sixHarmony = getSixHarmony(i);
+                const twelveDeity = getTwelveDeity(i);
+
+                // Create day content
+                let dayContent = `<div class="day-number">${i}</div>`;
+                dayContent += `<div class="lunar-date">${lunarDate.dayName}</div>`;
+
+                // Add festival or solar term info
+                if (festival) {
+                    dayContent += `<div class="festival-text">${festival}</div>`;
+                    day.classList.add('festival');
+                } else if (lunarFestival) {
+                    dayContent += `<div class="festival-text">${lunarFestival}</div>`;
+                    day.classList.add('festival');
+                } else if (solarTerm) {
+                    dayContent += `<div class="festival-text">${solarTerm}</div>`;
+                    day.classList.add('solar-term');
+                } else {
+                    // Show almanac info for regular days
+                    dayContent += `<div class="almanac-info">${sixHarmony} ${twelveDeity}</div>`;
+                }
+
+                day.innerHTML = dayContent;
+                day.style.opacity = '0.5';
+                day.style.backgroundColor = '#f8f9fa';
+                day.style.color = '#6c757d';
+
+                // Add click event for detailed almanac info
+                day.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    showAlmanacDetail(nextYear, nextMonth, i, event);
+                });
+
+                daysDiv.appendChild(day);
+            }
+
+            calendar.appendChild(daysDiv);
+        }
+
+        function getSolarTerm(year, month, day) {
+            // Simplified solar term calculation
+            const solarTermDates = {
+                1: [5, 6], 2: [4, 5], 3: [5, 6], 4: [20, 21], 5: [5, 6], 6: [21, 22], 7: [5, 6], 8: [22, 23],
+                9: [7, 8], 10: [23, 24], 11: [7, 8], 12: [21, 22], 13: [7, 8], 14: [22, 23], 15: [7, 8], 16: [22, 23],
+                17: [8, 9], 18: [23, 24], 19: [8, 9], 20: [22, 23], 21: [7, 8], 22: [21, 22], 23: [6, 7], 24: [21, 22]
+            };
+
+            const termIndex = (month - 1) * 2 + (day <= 15 ? 1 : 2);
+            const termDates = solarTermDates[termIndex];
+
+            if (termDates && (day === termDates[0] || day === termDates[1])) {
+                return solarTerms[termIndex];
+            }
+            return null;
+        }
+
+        function showTodayInfo() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const day = today.getDate();
+
+            const lunarDate = getLunarDate(year, month, day);
+            const zodiac = getZodiacSign(year);
+            const westernZodiacSign = getWesternZodiac(month + 1, day);
+            const sixHarmony = getSixHarmony(day);
+            const twelveDeity = getTwelveDeity(day);
+            const sixHarmonyDesc = getSixHarmonyDescription(sixHarmony);
+            const twelveDeityDesc = getTwelveDeityDescription(twelveDeity);
+
+            const todayDetails = document.getElementById('today-details');
+
+            todayDetails.innerHTML = `
+                <div class="today-detail">📅 <strong>日期：</strong>${year}年${month + 1}月${day}日</div>
+                <div class="today-detail">🌙 <strong>农历：</strong>${lunarDate.monthName}${lunarDate.dayName}</div>
+                <div class="today-detail">🐉 <strong>生肖：</strong>${zodiac}年</div>
+                <div class="today-detail">⭐ <strong>星座：</strong>${westernZodiacSign}</div>
+                <div class="today-detail">🔮 <strong>六曜：</strong>${sixHarmony} - ${sixHarmonyDesc}</div>
+                <div class="today-detail">⚡ <strong>十二神：</strong>${twelveDeity} - ${twelveDeityDesc}</div>
+                <div class="today-detail"><strong>宜：</strong><span class="auspicious">祭祀、祈福、出行、动土</span></div>
+                <div class="today-detail"><strong>忌：</strong><span class="inauspicious">诉讼、争斗、嫁娶</span></div>
+                <div class="today-detail"><strong>时辰吉凶：</strong>子时吉、丑时平、寅时凶</div>
+                <div class="today-detail"><strong>五行：</strong>金旺 土相</div>
+                <div class="today-detail"><strong>彭祖百忌：</strong>忌栽种、修屋</div>
+            `;
+        }
+
+        function navigateMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            showTodayInfo();
+        }
+
+        // Initialize
+        document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
+        document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
+
+        // Start with current month
+        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        showTodayInfo();
+    </script>
+</body>
+</html>
