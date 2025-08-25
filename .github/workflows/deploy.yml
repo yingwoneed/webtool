@@ -1,0 +1,24 @@
+name: Deploy HTML to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # 当推送到 main 分支时自动部署
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 如果你的 HTML 文件在根目录，可直接发布
+    # 如果在 docs/ 或 dist/ 目录，修改 publish_dir
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs  # 根目录下所有文件都发布
+        # 若你的 HTML 文件在 dist/ 下，写 ./dist
